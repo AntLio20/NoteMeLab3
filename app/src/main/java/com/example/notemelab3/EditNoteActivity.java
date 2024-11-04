@@ -1,4 +1,4 @@
-package com.example.notemelab2;
+package com.example.notemelab3;
 
 import android.os.Bundle;
 import android.view.View;
@@ -11,6 +11,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import android.graphics.Color;
+
 
 public class EditNoteActivity extends AppCompatActivity {
 

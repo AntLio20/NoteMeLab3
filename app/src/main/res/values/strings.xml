@@ -15,4 +15,7 @@
     <string name="no_notes_saved">No notes saved</string>
     <string name="search_notes">Search Notes …</string>
     <string name="edit_note">Edit Note</string>
+    <string name="select_image">Select Image</string>
+    <string name="capture_image">Capture Image</string>
+    <string name="select_image_btn">Select Image</string>
 </resources>

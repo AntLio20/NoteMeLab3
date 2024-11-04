@@ -1,24 +1,70 @@
-package com.example.notemelab2;
+package com.example.notemelab3;
 
-import android.content.Intent;
+
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.view.Gravity;
+import android.view.MenuInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import android.graphics.Color;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+
 public class NewNoteActivity extends AppCompatActivity {
 
     private String selectedColor = "#A7BED3";
-    private Button lastSelectedButton, saveButton, cancelButton, color1, color2, color3, color4, color5;;
+    private Button lastSelectedButton, saveButton, cancelButton, selectImageButton, color1, color2, color3, color4, color5;;
     DBHandler dbHandler;
     private View colorLayout;
+
+    private byte[] image = null;
+    private ImageView noteImageView;
+
+    // Activity result launcher for getting an image from the gallery
+    private final ActivityResultLauncher<String> pickImageLauncher =
+            registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+                if (uri != null) {
+                    try {
+                        InputStream inputStream = getContentResolver().openInputStream(uri);
+                        byte[] byteArray = new byte[inputStream.available()];
+                        inputStream.read(byteArray);
+                        image = byteArray;
+
+                        // Set the selected image in the ImageView
+                        noteImageView.setImageURI(uri);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+    // Activity result launcher for capturing an image from the camera
+    private final ActivityResultLauncher<Void> captureImageLauncher =
+            registerForActivityResult(new ActivityResultContracts.TakePicturePreview(), bitmap -> {
+                if (bitmap != null) {
+                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                    image = stream.toByteArray();
+
+                    // Set the captured image in the ImageView
+                    noteImageView.setImageBitmap(bitmap);
+                }
+            });
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +72,7 @@ public class NewNoteActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_new_note);
 
+        noteImageView = findViewById(R.id.noteImageView);
         dbHandler = new DBHandler(this);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -39,6 +86,9 @@ public class NewNoteActivity extends AppCompatActivity {
 
         cancelButton = findViewById(R.id.cancelButton);
         cancelButton.setOnClickListener(v -> finish());
+
+        selectImageButton = findViewById(R.id.selectImageButton);
+        selectImageButton.setOnClickListener(v -> displayImagePopUp(v));
 
         color1 = findViewById(R.id.color1);
         color1.setOnClickListener(v -> changeNoteColor("#A7BED3", color1));
@@ -99,5 +149,38 @@ public class NewNoteActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, "Error saving note", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public void displayImagePopUp(View view) {
+        PopupMenu popupMenu = new PopupMenu(this, view);
+        MenuInflater inflater = popupMenu.getMenuInflater();
+        inflater.inflate(R.menu.imagepopup, popupMenu.getMenu());
+
+        popupMenu.setGravity(Gravity.END);
+
+        // Set the listener for menu item clicks
+        popupMenu.setOnMenuItemClickListener(menuItem -> {
+            int itemId = menuItem.getItemId(); // Get the clicked menu item ID
+            if (itemId == R.id.selectImage) {
+                selectImage(); // Call selectImage method
+                return true;
+            } else if (itemId == R.id.captureImage) {
+                captureImage(); // Call captureImage method
+                return true;
+            }
+            return false; // Return false if no valid item was clicked
+        });
+
+        popupMenu.show(); // Show the popup menu
+    }
+
+    // Method to handle selecting an image from the gallery
+    public void selectImage() {
+        pickImageLauncher.launch("image/*");
+    }
+
+    // Method to handle capturing an image using the camera
+    public void captureImage() {
+        captureImageLauncher.launch(null);
     }
 }
